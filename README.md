@@ -32,6 +32,31 @@ A web-based Tic-Tac-Toe game featuring an AI opponent with temporal difference l
 
 3. Open your browser to `http://localhost:5001`
 
+## Application Flow
+
+### Game Flow
+1. **Initialize Game**: User clicks "New Game" → Flask creates new TicTacToeGame instance
+2. **Human Move**: User clicks cell → Frontend sends move to `/make_move` endpoint
+3. **Move Validation**: Backend validates move and updates game state
+4. **AI Decision**: Game engine calculates move values using trained Q-values
+5. **AI Move**: AI selects best move and updates board
+6. **Game Tree Generation**: Backend generates decision tree for visualization
+7. **Response**: Frontend receives updated board state and move analysis
+8. **Visualization**: Tree visualization panel shows AI's decision process
+
+### Data Flow
+```
+Frontend (HTML/JS) ↔ Flask API ↔ Game Engine ↔ AI Agent (Q-values)
+                                       ↓
+                               Game Tree Generator
+```
+
+### Key Components Interaction
+- **Flask App**: Handles HTTP requests and game state management
+- **TicTacToeGame**: Core game logic and move validation
+- **AI Agent**: Uses temporal difference learning with pre-trained values
+- **Game Tree**: Visualizes possible moves and their evaluations
+
 ## How to Play
 
 1. Click "New Game" to start
