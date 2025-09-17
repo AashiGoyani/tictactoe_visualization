@@ -307,6 +307,12 @@ class Agent:
             move = self.random(state)
         else:
             move = self.greedy(state)
+
+        # Set up state tracking for learning
+        state[move[0]][move[1]] = self.player
+        self.prevstate = self.statetuple(state)
+        self.prevscore = self.lookup(state)
+        state[move[0]][move[1]] = EMPTY
         return move
 
     def random(self, state):
@@ -376,3 +382,19 @@ class Agent:
 
     def statetuple(self, state):
         return (tuple(state[0]),tuple(state[1]),tuple(state[2]))
+
+def emptystate():
+    return [[EMPTY,EMPTY,EMPTY],[EMPTY,EMPTY,EMPTY],[EMPTY,EMPTY,EMPTY]]
+
+def play(agent1, agent2):
+    state = emptystate()
+    for i in range(9):
+        if i % 2 == 0:
+            move = agent1.action(state)
+        else:
+            move = agent2.action(state)
+        state[move[0]][move[1]] = (i % 2) + 1
+        winner = gameover(state)
+        if winner != EMPTY:
+            return winner
+    return winner
