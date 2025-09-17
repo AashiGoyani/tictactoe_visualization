@@ -1,0 +1,37 @@
+body {
+    font-family: monospace;
+    margin: 20px;
+}
+
+button {
+    font-family: monospace;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+#canvascontainer {
+    margin-bottom: 20px;
+}
+
+.value-high {
+    color: green;
+}
+
+.value-medium {
+    color: orange;
+}
+
+.value-low {
+    color: red;
+}
+
+#agent_info_area {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+#game_over_area {
+    margin-top: 20px;
+    text-align: center;
+}

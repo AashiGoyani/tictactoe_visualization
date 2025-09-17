@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+    <head>
+        <title>TD Learning Tic-Tac-Toe Visualization</title>
+        <link rel="stylesheet" href="/static/style.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/addons/p5.dom.min.js"></script>
+        <script src="/static/td_agent.js"></script>
+        <script src="/static/improved_tree.js"></script>
+        <script src="/static/sketch.js"></script>
+    </head>
+    <body>
+        <h1>TD Learning Tic-tac-toe Visualization</h1>
+        <div style="display: flex; gap: 20px;">
+            <div style="border: solid 1px black; padding: 1em;">
+                <div id="canvascontainer"></div>
+                <p id="starting_player_area">
+                    <b>Who will start the game?</b>
+                    <br>
+                    <button onclick="myp5.selectStartingPlayer(0)">HUMAN (You!)</button>
+                    <button onclick="myp5.selectStartingPlayer(1)">TD AGENT</button>
+                </p>
+                <p id="whoseturn_area">
+                    <b>Whose turn?</b> <span id="whoseturn">HUMAN</span>
+                </p>
+                <div id="agent_info_area">
+                    <b>TD Agent Information:</b>
+                    <div style="background-color: rgb(230, 230, 230); padding: 1em">                
+                        <div>Current state value: <span id="state_value">0.5</span></div>
+                        <div>Learning rate (α): <span id="alpha">0.99</span></div>
+                        <div>Exploration rate (ε): <span id="epsilon">0.1</span></div>
+                    </div>
+                </div>
+                <div id="game_over_area">
+                    <b>The winner is...</b> <span id="game_over_winner">HUMAN</span>!
+                    <br>
+                    <center>
+                        <button onclick="myp5.reset()">Restart game</button>
+                    </center>
+                </div>
+            </div>
+            <div style="border: solid 1px black;">
+                <div id="tree_vis"></div>
+                <div style="padding: 1em;">
+                    <b>Value Tree Visualization</b>
+                    <p>• Drag to pan the view</p>
+                    <p>• Scroll to zoom in/out</p>
+                    <p>• Click nodes to expand/collapse</p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

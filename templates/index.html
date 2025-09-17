@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe vs AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            background-color: #fff;
+            font-size: 36px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .cell:hover {
+            background-color: #f5f5f5;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+            background-color: #e0e0e0;
+        }
+        .cell.x {
+            color: #e74c3c;
+        }
+        .cell.o {
+            color: #3498db;
+        }
+        .status {
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 25px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        .new-game {
+            background-color: #27ae60;
+            color: white;
+        }
+        .new-game:hover {
+            background-color: #229954;
+        }
+        .tree-view {
+            background-color: #8e44ad;
+            color: white;
+        }
+        .tree-view:hover:not(:disabled) {
+            background-color: #7d3c98;
+        }
+        .tree-view:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .winner {
+            color: #27ae60;
+        }
+        .loser {
+            color: #e74c3c;
+        }
+        .draw {
+            color: #f39c12;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+        .ai-thinking {
+            margin: 20px auto;
+            max-width: 500px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        .ai-thinking h4 {
+            margin: 0 0 10px 0;
+            font-family: Arial, sans-serif;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe vs AI</h1>
+        <div class="info">
+            You are X, AI is O. Click on any empty cell to make your move!
+        </div>
+        <div class="status" id="status">Click "New Game" to start!</div>
+        <div class="board" id="board"></div>
+        <div class="ai-thinking" id="ai-thinking"></div>
+        <div class="controls">
+            <button class="new-game" onclick="newGame()">New Game</button>
+            <button class="tree-view" onclick="openTreeView()" id="treeButton" disabled>🌳 View Decision Tree</button>
+            <a href="/split" style="display: inline-block; padding: 12px 24px; background: #9b59b6; color: white; text-decoration: none; border-radius: 5px; margin: 0 10px;">📊 Split View</a>
+        </div>
+    </div>
+
+    <script>
+        let gameActive = false;
+        let currentBoard = [[0,0,0],[0,0,0],[0,0,0]];
+        let gameId = null;
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.onclick = () => makeMove(i, j);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoard(board) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                const value = board[row][col];
+                
+                cell.textContent = '';
+                cell.className = 'cell';
+                
+                if (value === 1) {
+                    cell.textContent = 'X';
+                    cell.classList.add('x');
+                } else if (value === 2) {
+                    cell.textContent = 'O';
+                    cell.classList.add('o');
+                }
+                
+                if (!gameActive || value !== 0) {
+                    cell.classList.add('disabled');
+                }
+            });
+        }
+
+        function updateStatus(message, className = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = className;
+        }
+
+        async function newGame() {
+            try {
+                const response = await fetch('/new_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                currentBoard = data.board;
+                gameActive = data.status === 'active';
+                gameId = data.game_id;
+                
+                updateBoard(currentBoard);
+                updateStatus('Your turn! Click on any empty cell.');
+                
+                // Enable tree view button
+                document.getElementById('treeButton').disabled = false;
+                
+            } catch (error) {
+                updateStatus('Error starting new game. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        async function makeMove(row, col) {
+            if (!gameActive || currentBoard[row][col] !== 0 || !gameId) {
+                return;
+            }
+
+            updateStatus('Making your move...');
+            
+            try {
+                const response = await fetch('/make_move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ row: row, col: col, game_id: gameId })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    updateStatus('Invalid move. Try again.');
+                    return;
+                }
+
+                currentBoard = data.board;
+                updateBoard(currentBoard);
+
+                // Display AI thinking process
+                if (data.move_values) {
+                    displayAIThinking(data.move_values, data.ai_move);
+                }
+
+                if (data.status === 'finished') {
+                    gameActive = false;
+                    if (data.winner === 'human') {
+                        updateStatus('Congratulations! You won!', 'winner');
+                    } else if (data.winner === 'ai') {
+                        updateStatus('AI wins! Better luck next time.', 'loser');
+                    } else {
+                        updateStatus('It\'s a draw!', 'draw');
+                    }
+                } else {
+                    if (data.ai_move) {
+                        updateStatus('AI is thinking...');
+                        setTimeout(() => {
+                            updateStatus('Your turn!');
+                        }, 500);
+                    } else {
+                        updateStatus('Your turn!');
+                    }
+                }
+
+            } catch (error) {
+                updateStatus('Error making move. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        function displayAIThinking(moveValues, chosenMove) {
+            const thinkingDiv = document.getElementById('ai-thinking');
+            let content = '<h4>🤖 AI Decision Process:</h4>';
+            
+            // Extract tie info if present
+            const tieInfo = moveValues["_tie_info"];
+            delete moveValues["_tie_info"];
+            
+            // Sort moves by value (highest first)
+            const sortedMoves = Object.entries(moveValues).sort((a, b) => b[1] - a[1]);
+            
+            content += 'Evaluating possible moves:\n';
+            sortedMoves.forEach(([position, value]) => {
+                const [row, col] = position.split(',');
+                const isChosen = chosenMove && chosenMove[0] == row && chosenMove[1] == col;
+                const marker = isChosen ? '👉 ' : '   ';
+                content += `${marker}Position (${row},${col}): ${value.toFixed(4)}${isChosen ? ' ← CHOSEN' : ''}\n`;
+            });
+            
+            if (tieInfo) {
+                content += `\n⚡ ${tieInfo}\n`;
+            }
+            
+            if (chosenMove) {
+                const chosenValue = moveValues[`${chosenMove[0]},${chosenMove[1]}`];
+                content += `\nChosen: (${chosenMove[0]},${chosenMove[1]}) with value ${chosenValue.toFixed(4)}`;
+            }
+            
+            thinkingDiv.innerHTML = content;
+        }
+
+        function openTreeView() {
+            if (gameId) {
+                window.open(`/tree?game_id=${gameId}`, '_blank');
+            } else {
+                alert('No active game. Start a new game first!');
+            }
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>

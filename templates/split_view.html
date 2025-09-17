@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe with Decision Tree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left side - Game */
+        .game-panel {
+            width: 50%;
+            background-color: #f0f0f0;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 3px solid #ddd;
+        }
+        .game-content {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 4px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .cell {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #333;
+            background-color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .cell:hover {
+            background-color: #f5f5f5;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+            background-color: #e0e0e0;
+        }
+        .cell.x { color: #e74c3c; }
+        .cell.o { color: #3498db; }
+        .status {
+            margin: 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        .winner { color: #27ae60; }
+        .loser { color: #e74c3c; }
+        .draw { color: #f39c12; }
+        .controls {
+            margin: 15px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .new-game {
+            background-color: #27ae60;
+            color: white;
+        }
+        .new-game:hover {
+            background-color: #229954;
+        }
+        .refresh-tree {
+            background-color: #3498db;
+            color: white;
+        }
+        .refresh-tree:hover {
+            background-color: #2980b9;
+        }
+        .ai-thinking {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 11px;
+            text-align: left;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .ai-thinking h4 {
+            margin: 0 0 8px 0;
+            font-family: Arial, sans-serif;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        /* Right side - Tree */
+        .tree-panel {
+            width: 50%;
+            background-color: #ffffff;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .tree-header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .tree-controls {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .tree-controls input, .tree-controls button {
+            margin: 3px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .tree-container {
+            min-height: 400px;
+        }
+        .tree-node {
+            display: inline-block;
+            margin: 8px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            text-align: center;
+            min-width: 100px;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        .tree-node.root {
+            border-color: #3498db;
+            background: #e8f4f8;
+        }
+        .tree-node.best-move {
+            border-color: #27ae60;
+            background: #e8f5e8;
+            box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+        }
+        .mini-board {
+            display: grid;
+            grid-template-columns: repeat(3, 16px);
+            grid-template-rows: repeat(3, 16px);
+            gap: 1px;
+            margin: 4px auto;
+            justify-content: center;
+        }
+        .mini-cell {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #333;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .mini-cell.x { color: #e74c3c; }
+        .mini-cell.o { color: #3498db; }
+        .value {
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+        .value.high { color: #27ae60; }
+        .value.medium { color: #f39c12; }
+        .value.low { color: #e74c3c; }
+        .tree-level {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .move-label {
+            font-size: 10px;
+            color: #666;
+            margin: 2px 0;
+        }
+        .no-tree {
+            text-align: center;
+            color: #666;
+            margin-top: 30px;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin: 30px 0;
+        }
+        .info {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #555;
+        }
+        .connection-line {
+            position: absolute;
+            border-left: 1px solid #bdc3c7;
+            height: 20px;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .expand-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e74c3c !important;
+            color: white !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            border: 2px solid white;
+        }
+        .expand-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        .children-container {
+            margin-left: 20px;
+            border-left: 2px solid #ecf0f1;
+            padding-left: 10px;
+            margin-top: 10px;
+        }
+        /* Zoomable Hierarchical Tree Styles */
+        .tree-container {
+            position: relative;
+            overflow: auto;
+            height: 80vh;
+        }
+        
+        .hierarchical-tree {
+            transform-origin: top center;
+            transition: transform 0.3s ease;
+            padding: 20px;
+            text-align: center;
+            min-width: 100%;
+            position: relative;
+        }
+        
+        .tree-level {
+            position: relative;
+            margin: 50px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            flex-wrap: nowrap; /* Keep child nodes in single line */
+            overflow-x: visible;
+        }
+        
+        .level-0 {
+            justify-content: center;
+        }
+        
+        .tree-node-container {
+            position: relative;
+            display: inline-block;
+            margin: 0 10px;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        
+        .vertical-line {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background-color: #666;
+            z-index: 1;
+        }
+        
+        /* Vertical line from root to first level - longer */
+        .level-0 .vertical-line {
+            bottom: -50px;
+            height: 50px;
+        }
+        
+        
+        /* Smaller tree nodes for better fit */
+        .tree-node {
+            min-width: 80px;
+            font-size: 11px;
+        }
+        
+        .mini-board {
+            display: grid;
+            grid-template-columns: repeat(3, 12px);
+            grid-template-rows: repeat(3, 12px);
+            gap: 1px;
+            margin: 3px auto;
+            justify-content: center;
+        }
+        
+        .mini-cell {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #333;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Tree expansion styles */
+        .children-container {
+            margin-top: 40px;
+            position: relative;
+        }
+        
+        .child-nodes-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: nowrap;
+        }
+        
+        .child-node-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        
+        .tree-node-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .child-nodes-row {
+            position: relative;
+        }
+
+        /* Horizontal connector lines between siblings */
+        .level-connector {
+            position: absolute !important;
+            height: 2px !important;
+            background-color:rgb(78, 75, 75) !important;
+            border: 1px solid #333333 !important;
+            z-index: 10 !important;
+            pointer-events: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+            border-radius: 1px !important;
+            top: -25px !important;
+        }
+        
+        /* Vertical line from parent to children (dynamically positioned) */
+        .parent-vertical-span {
+            position: absolute;
+            top: -20px;
+            width: 2px;
+            height: 20px;
+            background-color: #666;
+            z-index: 0;
+            transform: translateX(-50%);
+        }
+        
+        /* Root vertical line - connects to horizontal line */
+        .root-vertical-line {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background-color: #666;
+            z-index: 1;
+        }
+        
+        /* Main root vertical line - from root down */
+        .main-root-vertical {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 50px;
+            background-color: #666;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel - Game -->
+        <div class="game-panel">
+            <div class="game-content">
+                <h1>🎮 Tic-Tac-Toe vs AI</h1>
+                <div class="info">
+                    You are X, AI is O. Watch the AI's decision-making process in real-time!
+                </div>
+                <div class="status" id="status">Click "New Game" to start!</div>
+                <div class="board" id="board"></div>
+                <div class="ai-thinking" id="ai-thinking"></div>
+                <div class="controls">
+                    <button class="new-game" onclick="newGame()">New Game</button>
+                    <button class="refresh-tree" onclick="refreshTree()" id="refreshButton" disabled>🔄 Refresh Tree</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Tree -->
+        <div class="tree-panel">
+            <div class="tree-header">
+                <h2>🌳 AI Decision Tree</h2>
+            </div>
+            <div class="tree-controls">
+                <button onclick="refreshTree()" id="refreshTree2">🔄 Refresh Complete Tree</button>
+                <button onclick="zoomIn()">🔍+ Zoom In</button>
+                <button onclick="zoomOut()">🔍- Zoom Out</button>
+                <button onclick="resetZoom()">↻ Reset Zoom</button>
+            </div>
+            <div class="tree-container" id="treeContainer">
+                <div class="no-tree">
+                    <p>🎯 Start a new game to see the AI's decision tree</p>
+                    <p><small>The tree shows all possible moves and their values</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameActive = false;
+        let currentBoard = [[0,0,0],[0,0,0],[0,0,0]];
+        let gameId = null;
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.onclick = () => makeMove(i, j);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function updateBoard(board) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                const value = board[row][col];
+                
+                cell.textContent = '';
+                cell.className = 'cell';
+                
+                if (value === 1) {
+                    cell.textContent = 'X';
+                    cell.classList.add('x');
+                } else if (value === 2) {
+                    cell.textContent = 'O';
+                    cell.classList.add('o');
+                }
+                
+                if (!gameActive || value !== 0) {
+                    cell.classList.add('disabled');
+                }
+            });
+        }
+
+        function updateStatus(message, className = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = className;
+        }
+
+        function displayAIThinking(moveValues, chosenMove) {
+            const thinkingDiv = document.getElementById('ai-thinking');
+            let content = '<h4>🤖 AI Decision Process:</h4>';
+            
+            const tieInfo = moveValues["_tie_info"];
+            delete moveValues["_tie_info"];
+            
+            const sortedMoves = Object.entries(moveValues).sort((a, b) => b[1] - a[1]);
+            
+            content += 'Evaluating possible moves:\n';
+            sortedMoves.forEach(([position, value]) => {
+                const [row, col] = position.split(',');
+                const isChosen = chosenMove && chosenMove[0] == row && chosenMove[1] == col;
+                const marker = isChosen ? '👉 ' : '   ';
+                content += `${marker}Position (${row},${col}): ${value.toFixed(4)}${isChosen ? ' ← CHOSEN' : ''}\n`;
+            });
+            
+            if (tieInfo) {
+                content += `\n⚡ ${tieInfo}\n`;
+            }
+            
+            if (chosenMove) {
+                const chosenValue = moveValues[`${chosenMove[0]},${chosenMove[1]}`];
+                content += `\nChosen: (${chosenMove[0]},${chosenMove[1]}) with value ${chosenValue.toFixed(4)}`;
+            }
+            
+            thinkingDiv.innerHTML = content;
+        }
+
+        async function newGame() {
+            try {
+                const response = await fetch('/new_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                currentBoard = data.board;
+                gameActive = data.status === 'active';
+                gameId = data.game_id;
+                
+                updateBoard(currentBoard);
+                updateStatus('Your turn! Click on any empty cell.');
+                
+                document.getElementById('refreshButton').disabled = false;
+                document.getElementById('refreshTree2').disabled = false;
+                
+                // Auto-refresh tree
+                setTimeout(refreshTree, 500);
+                
+            } catch (error) {
+                updateStatus('Error starting new game. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        async function makeMove(row, col) {
+            if (!gameActive || currentBoard[row][col] !== 0 || !gameId) {
+                return;
+            }
+
+            updateStatus('Making your move...');
+            
+            try {
+                const response = await fetch('/make_move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ row: row, col: col, game_id: gameId })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    updateStatus('Invalid move. Try again.');
+                    return;
+                }
+
+                currentBoard = data.board;
+                updateBoard(currentBoard);
+
+                if (data.move_values) {
+                    displayAIThinking(data.move_values, data.ai_move);
+                }
+
+                if (data.status === 'finished') {
+                    gameActive = false;
+                    if (data.winner === 'human') {
+                        updateStatus('Congratulations! You won!', 'winner');
+                    } else if (data.winner === 'ai') {
+                        updateStatus('AI wins! Better luck next time.', 'loser');
+                    } else {
+                        updateStatus('It\'s a draw!', 'draw');
+                    }
+                } else {
+                    updateStatus('Your turn!');
+                }
+
+                // Auto-refresh tree after move
+                setTimeout(refreshTree, 300);
+
+            } catch (error) {
+                updateStatus('Error making move. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        // Tree visualization functions
+        function renderMiniBoard(board) {
+            let html = '<div class="mini-board">';
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const value = board[i][j];
+                    let content = '';
+                    let className = 'mini-cell';
+                    
+                    if (value === 1) {
+                        content = 'X';
+                        className += ' x';
+                    } else if (value === 2) {
+                        content = 'O';
+                        className += ' o';
+                    }
+                    
+                    html += `<div class="${className}">${content}</div>`;
+                }
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function getValueClass(value) {
+            if (value >= 0.7) return 'high';
+            if (value >= 0.3) return 'medium';
+            return 'low';
+        }
+
+        function renderTreeNode(node, isRoot = false) {
+            if (!node) return '';
+            
+            const nodeClass = isRoot ? 'root' : 'tree-node';
+            
+            let html = `<div class="tree-node ${nodeClass}">`;
+            html += renderMiniBoard(node.board);
+            
+            if (isRoot) {
+                html += '<div class="move-label">Current State</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderMoveNode(move, isBest = false, nodeId = '') {
+            const valueClass = getValueClass(move.value);
+            const nodeClass = isBest ? 'best-move' : '';
+            const playerName = move.player === 2 ? 'AI (O)' : 'Human (X)';
+            const hasChildren = move.has_children || (move.child && move.child.moves && move.child.moves.length > 0);
+            
+            // Debug logging
+            console.log(`Node ${nodeId}: has_children=${move.has_children}, child_moves=${move.child ? move.child.moves?.length : 'no child'}, final hasChildren=${hasChildren}`);
+            
+            let html = `<div class="tree-node ${nodeClass}" data-node-id="${nodeId}">`;
+            
+            // Add expand/collapse button only if node has children
+            if (hasChildren) {
+                html += `<div class="expand-btn" onclick="toggleNode('${nodeId}')">+</div>`;
+            }
+            
+            html += renderMiniBoard(move.board);
+            html += `<div class="move-label">${playerName}: (${move.position[0]},${move.position[1]})</div>`;
+            html += `<div class="value value-${valueClass}">${move.value.toFixed(3)}</div>`;
+            if (isBest) {
+                html += '<div style="font-size:10px; color:#27ae60;">★ BEST</div>';
+            }
+            
+            // Debug info
+            if (hasChildren) {
+                html += '<div style="font-size:8px; color:#666;">Has children</div>';
+            }
+            
+            html += '</div>';
+            
+            return html;
+        }
+
+        function renderTreeLevel(moves, level, parentId = '') {
+            if (!moves || moves.length === 0) return '';
+            
+            let html = '<div class="tree-level" style="display: flex; justify-content: center; flex-wrap: wrap; margin: 20px 0;">';
+            moves.forEach((move, index) => {
+                const nodeId = `${parentId}_${level}_${index}`;
+                const isBest = level === 1 && index === 0; // Only mark first AI move as best
+                html += renderMoveNode(move, isBest, nodeId);
+            });
+            html += '</div>';
+            
+            return html;
+        }
+
+        function renderGameTree(tree) {
+            if (!tree) {
+                return '<div class="no-tree">No tree data available</div>';
+            }
+
+            console.log('Rendering tree:', tree);
+            let html = '<div class="hierarchical-tree">';
+            
+            // Root node with connecting line
+            html += '<div class="tree-level level-0">';
+            html += '<div class="tree-node-container">';
+            html += renderTreeNode(tree, true);
+            if (tree.moves && tree.moves.length > 0) {
+                html += '<div class="main-root-vertical"></div>';
+            }
+            html += '</div>';
+            html += '</div>';
+            
+            // Store tree data for expansion - initialize BEFORE rendering
+            window.currentTreeData = tree;
+            window.treeNodes = {};
+            
+            // Only render first level initially (AI moves) with horizontal connector
+            if (tree.moves && tree.moves.length > 0) {
+                html += '<div class="tree-level level-1" id="level-root-1">';
+                html += '<div class="child-nodes-row">';
+                
+                // Horizontal connectors are now handled dynamically
+                
+                tree.moves.forEach((move, index) => {
+                    const nodeId = `root_1_${index}`;
+                    html += '<div class="child-node-wrapper">';
+                    html += '<div class="tree-node-container">';
+                    html += renderExpandableMoveNode(move, 1, index, nodeId);
+                    // Add vertical line if this child has children
+                    if (move.child && move.child.moves && move.child.moves.length > 0) {
+                        html += '<div class="root-vertical-line"></div>';
+                    }
+                    html += '</div>';
+                    html += '</div>';
+                    
+                    // Store node reference
+                    window.treeNodes[nodeId] = move;
+                });
+                
+                html += '</div>';
+                html += '</div>';
+                
+                // Calculate connectors for root's children with better timing
+                setTimeout(() => {
+                    document.body.offsetHeight; // Force reflow
+                    recalcAllRowConnectors();
+                }, 200);
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+
+        function renderExpandableMoveNode(move, level, index, nodeId) {
+            // Try different possible property names for the value
+            let nodeValue = move.value || move.score || move.state_value || move.evaluation || 0;
+            
+            // If it's still 0, check if there are nested properties
+            if (nodeValue === 0 && move.child) {
+                nodeValue = move.child.value || move.child.score || move.child.state_value || 0;
+            }
+            
+            // Debug logging (remove this after finding the correct property)
+            if (nodeValue === 0) {
+                console.log(`Node ${nodeId}: ZERO VALUE - move object:`, move);
+                if (move.child && move.child.moves) {
+                    console.log(`Node ${nodeId}: First child move:`, move.child.moves[0]);
+                }
+            }
+            
+            const valueClass = getValueClass(Math.abs(nodeValue));
+            const playerName = move.player === 2 ? 'AI (O)' : 'Human (X)';
+            const isBest = level === 1 && index === 0;
+            const nodeClass = isBest ? 'best-move' : '';
+            const hasChildren = move.child && move.child.moves && move.child.moves.length > 0;
+            
+            console.log(`Node ${nodeId}: hasChildren=${hasChildren}, childCount=${move.child ? move.child.moves?.length : 0}`);
+            
+            let html = `<div class="tree-node ${nodeClass}" data-node-id="${nodeId}">`;
+            
+            // Add expand button if node has children
+            if (hasChildren) {
+                html += `<div class="expand-btn" onclick="expandTreeNode('${nodeId}')">+</div>`;
+            }
+            
+            html += renderMiniBoard(move.board);
+            html += `<div class="move-label">${playerName}: (${move.position[0]},${move.position[1]})</div>`;
+            html += `<div class="value value-${valueClass}">${nodeValue.toFixed(3)}</div>`;
+            if (isBest) {
+                html += '<div style="font-size:10px; color:#27ae60;">★ BEST</div>';
+            }
+            html += '</div>';
+            
+            return html;
+        }
+
+        function expandTreeNode(nodeId) {
+            console.log('Expanding node:', nodeId);
+            const move = window.treeNodes[nodeId];
+            const expandBtn = document.querySelector(`[data-node-id="${nodeId}"] .expand-btn`);
+            
+            if (!move || !move.child || !move.child.moves) {
+                console.log('No children to expand');
+                return;
+            }
+            
+            // Check if children are already rendered
+            const childContainerId = `children-${nodeId}`;
+            let childContainer = document.getElementById(childContainerId);
+            
+            if (childContainer) {
+                // Toggle visibility
+                if (childContainer.style.display === 'none') {
+                    childContainer.style.display = 'block';
+                    expandBtn.textContent = '−';
+                    // Update connectors when expanding - delay to ensure DOM is updated
+                    setTimeout(() => {
+                        document.body.offsetHeight; // Force reflow
+                        recalcAllRowConnectors();
+                    }, 250);
+                } else {
+                    childContainer.style.display = 'none';
+                    expandBtn.textContent = '+';
+                    // Update connectors when collapsing - this will remove lines for hidden rows
+                    setTimeout(() => {
+                        document.body.offsetHeight; // Force reflow
+                        recalcAllRowConnectors();
+                    }, 250);
+                }
+            } else {
+                // Find the tree-node-container that contains this specific node
+                const nodeElement = document.querySelector(`[data-node-id="${nodeId}"]`);
+                const nodeContainer = nodeElement.closest('.tree-node-container');
+                
+                if (!nodeContainer) {
+                    console.error('Could not find node container for:', nodeId);
+                    return;
+                }
+                
+                console.log('Creating children for node:', nodeId, 'with', move.child.moves.length, 'children');
+                
+                // Create children container
+                let childLevel = 1;
+                // Count the depth by counting underscores and numbers
+                const parts = nodeId.split('_');
+                if (parts.length > 2) {
+                    childLevel = parseInt(parts[1]) + 1;
+                } else {
+                    childLevel = parseInt(parts[1]) + 1;
+                }
+                
+                let childHtml = `<div class="children-container" id="${childContainerId}">`;
+                childHtml += '<div class="child-nodes-row">';
+                
+                // Horizontal connectors are now handled dynamically
+                
+                move.child.moves.forEach((childMove, childIndex) => {
+                    const childNodeId = `${nodeId.replace(/_\d+$/, '')}_${childLevel}_${childIndex}`;
+                    console.log('Creating child node:', childNodeId);
+                    
+                    childHtml += '<div class="child-node-wrapper">';
+                    childHtml += '<div class="tree-node-container">';
+                    childHtml += renderExpandableMoveNode(childMove, childLevel, childIndex, childNodeId);
+                    // Add vertical line if this child has children
+                    if (childMove.child && childMove.child.moves && childMove.child.moves.length > 0) {
+                        childHtml += '<div class="root-vertical-line"></div>';
+                    }
+                    childHtml += '</div>';
+                    childHtml += '</div>';
+                    
+                    // Store child node reference
+                    window.treeNodes[childNodeId] = childMove;
+                });
+                
+                childHtml += '</div>';
+                childHtml += '</div>';
+                
+                // Append to the node container
+                nodeContainer.insertAdjacentHTML('beforeend', childHtml);
+                expandBtn.textContent = '−';
+                
+                // Position connectors for the newly created children with better timing
+                setTimeout(() => {
+                    // Force layout recalculation first
+                    document.body.offsetHeight;
+                    recalcAllRowConnectors();
+                }, 300);
+                
+            }
+        }
+
+        function toggleNode(nodeId) {
+            console.log('toggleNode called with:', nodeId);
+            const nodeElement = document.querySelector(`[data-node-id="${nodeId}"]`);
+            const expandBtn = nodeElement.querySelector('.expand-btn');
+            
+            // Check if children are already rendered
+            const childrenId = `children_${nodeId}`;
+            let childrenContainer = document.getElementById(childrenId);
+            
+            if (childrenContainer) {
+                // Toggle visibility
+                if (childrenContainer.style.display === 'none') {
+                    childrenContainer.style.display = 'block';
+                    expandBtn.textContent = '−';
+                } else {
+                    childrenContainer.style.display = 'none';
+                    expandBtn.textContent = '+';
+                }
+            } else {
+                // Find the move data
+                const move = window.treeNodes[nodeId];
+                console.log('Found move data:', move);
+                console.log('Move has child?', !!move.child);
+                console.log('Child moves:', move.child ? move.child.moves : 'no child');
+                
+                if (move && move.child && move.child.moves && move.child.moves.length > 0) {
+                    // Create children container
+                    childrenContainer = document.createElement('div');
+                    childrenContainer.id = childrenId;
+                    childrenContainer.className = 'children-container';
+                    
+                    // Render children
+                    const pathParts = nodeId.split('_');
+                    const currentLevel = parseInt(pathParts[1]);
+                    const childLevel = currentLevel + 1;
+                    
+                    let childrenHtml = renderTreeLevel(move.child.moves, childLevel, nodeId);
+                    childrenContainer.innerHTML = childrenHtml;
+                    
+                    // Store child nodes for future expansion
+                    move.child.moves.forEach((childMove, childIndex) => {
+                        const childNodeId = `${nodeId}_${childLevel}_${childIndex}`;
+                        window.treeNodes[childNodeId] = childMove;
+                    });
+                    
+                    // Insert after the current tree level
+                    const currentLevel_element = nodeElement.closest('.tree-level');
+                    currentLevel_element.parentNode.insertBefore(childrenContainer, currentLevel_element.nextSibling);
+                    expandBtn.textContent = '−';
+                    
+                    console.log('Created children for:', nodeId);
+                } else {
+                    console.log('No children found for:', nodeId);
+                    // If no children, disable the button
+                    expandBtn.style.display = 'none';
+                }
+            }
+        }
+
+        async function refreshTree() {
+            if (!gameId) return;
+            
+            const container = document.getElementById('treeContainer');
+            
+            container.innerHTML = '<div class="loading">🌳 Generating complete decision tree...</div>';
+
+            try {
+                const response = await fetch('/game_tree', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        game_id: gameId
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    container.innerHTML = `<div class="no-tree">Error: ${data.error}</div>`;
+                    return;
+                }
+                container.innerHTML = renderGameTree(data.tree);
+                
+                
+            } catch (error) {
+                container.innerHTML = `<div class="no-tree">Error: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+
+        // Zoom functionality
+        let currentZoom = 1;
+        const minZoom = 0.3;
+        const maxZoom = 3;
+        const zoomStep = 0.2;
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom += zoomStep;
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom -= zoomStep;
+                applyZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const treeElement = document.querySelector('.hierarchical-tree');
+            if (treeElement) {
+                treeElement.style.transform = `scale(${currentZoom})`;
+                // Adjust container width to accommodate scaled content
+                const container = document.getElementById('treeContainer');
+                if (container) {
+                    container.style.overflow = currentZoom > 1 ? 'auto' : 'hidden';
+                }
+            }
+        }
+
+        // Mouse wheel zoom
+        document.getElementById('treeContainer').addEventListener('wheel', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+            }
+        });
+
+        function cleanupConnectors() {
+            // Remove orphaned connector lines that are no longer needed
+            const hierarchicalTree = document.querySelector('.hierarchical-tree');
+            if (!hierarchicalTree) return;
+            
+            // Remove connectors from hidden child containers
+            const hiddenContainers = hierarchicalTree.querySelectorAll('.children-container[style*="display: none"]');
+            hiddenContainers.forEach(container => {
+                const childRow = container.querySelector('.child-nodes-row');
+                if (childRow) {
+                    const connector = childRow.querySelector('.parent-connector');
+                    const verticalSpan = childRow.querySelector('.parent-vertical-span');
+                    if (connector) {
+                        connector.style.display = 'none';
+                    }
+                    if (verticalSpan) {
+                        verticalSpan.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Show connectors for visible containers
+            const visibleContainers = hierarchicalTree.querySelectorAll('.children-container:not([style*="display: none"])');
+            visibleContainers.forEach(container => {
+                const childRow = container.querySelector('.child-nodes-row');
+                if (childRow) {
+                    const connector = childRow.querySelector('.parent-connector');
+                    const verticalSpan = childRow.querySelector('.parent-vertical-span');
+                    if (connector) {
+                        connector.style.display = 'block';
+                    }
+                    if (verticalSpan) {
+                        verticalSpan.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        function updateHorizontalConnectors() {
+            // Remove all existing level connectors
+            const hierarchicalTree = document.querySelector('.hierarchical-tree');
+            if (!hierarchicalTree) return;
+            
+            // Remove ALL level connectors from everywhere
+            hierarchicalTree.querySelectorAll('.level-connector').forEach(el => el.remove());
+            
+            // Find all visible sibling groups
+            const visibleRows = hierarchicalTree.querySelectorAll('.child-nodes-row:not([style*="display: none"])');
+            
+            console.log('updateHorizontalConnectors: Found', visibleRows.length, 'visible rows');
+            
+            // Process each row independently with proper timing
+            visibleRows.forEach((row, rowIndex) => {
+                setTimeout(() => {
+                    createHorizontalLineForRow(row, rowIndex);
+                }, rowIndex * 10); // Stagger the processing slightly
+            });
+        }
+        
+        function createHorizontalLineForRow(row, rowIndex) {
+            const childWrappers = row.querySelectorAll('.child-node-wrapper');
+            console.log(`Row ${rowIndex}: Found ${childWrappers.length} child wrappers`);
+
+            if (childWrappers.length > 1) {
+                // Remove any existing connector in this row
+                const existingConnectors = row.querySelectorAll('.level-connector');
+                existingConnectors.forEach(conn => conn.remove());
+
+                // Force layout recalculation and wait for DOM to settle
+                row.offsetHeight; // Trigger reflow
+
+                // Use requestAnimationFrame for better timing
+                requestAnimationFrame(() => {
+                    // Find the leftmost and rightmost positions among all children
+                    let minLeft = Infinity;
+                    let maxRight = -Infinity;
+
+                    childWrappers.forEach((wrapper, index) => {
+                        const left = wrapper.offsetLeft;
+                        const width = wrapper.offsetWidth;
+                        const right = left + width;
+
+                        minLeft = Math.min(minLeft, left);
+                        maxRight = Math.max(maxRight, right);
+
+                        console.log(`Child ${index}: left=${left}, width=${width}, right=${right}`);
+                    });
+
+                    // Calculate horizontal line to start at first child's center and extend to maxRight for full visual continuity
+                    const firstChildCenter = childWrappers[0].offsetLeft + (childWrappers[0].offsetWidth / 2);
+                    const lastChildLeft = childWrappers[childWrappers.length - 1].offsetLeft;
+                    const lastChildWidth = childWrappers[childWrappers.length - 1].offsetWidth;
+                    const lastChildCenter = lastChildLeft + (lastChildWidth / 2);
+
+                    // Extend to maxRight for full visual continuity (essential when nodes expand)
+                    const lineLeft = firstChildCenter;
+                    const lineWidth = maxRight - firstChildCenter;
+
+                    console.log(`Creating horizontal line for row ${rowIndex}: firstChildCenter=${firstChildCenter}, maxRight=${maxRight}, lastChildCenter=${lastChildCenter}, lineLeft=${lineLeft}, lineWidth=${lineWidth}`);
+                    console.log(`🔗 FULL CONTINUITY: Extends to maxRight to prevent detachment during expansion`);
+
+                    // Validate positions
+                    if (lineLeft >= 0 && lineWidth > 0 && lineWidth > 5) {
+                        // Create the horizontal line
+                        const levelConnector = document.createElement('div');
+                        levelConnector.className = 'level-connector';
+                        levelConnector.style.cssText = `
+                            position: absolute;
+                            left: ${lineLeft}px;
+                            top: -25px;
+                            width: ${lineWidth}px;
+                            height: 2px;
+                            background-color: rgb(78, 75, 75);
+                            border: 1px solid #333333;
+                            z-index: 10;
+                            pointer-events: none;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                            border-radius: 1px;
+                        `;
+
+                        // Append to the row
+                        row.appendChild(levelConnector);
+
+                        console.log(`Successfully created horizontal line for row ${rowIndex} at position ${lineLeft}px with width ${lineWidth}px`);
+
+                        // Debug: Add visual marker to verify positioning
+                        console.log(`Row dimensions:`, {
+                            rowWidth: row.offsetWidth,
+                            rowHeight: row.offsetHeight,
+                            totalChildren: childWrappers.length,
+                            linePosition: lineLeft,
+                            lineWidth: lineWidth,
+                            minLeft: minLeft,
+                            maxRight: maxRight
+                        });
+                    } else {
+                        console.log(`Invalid positions for row ${rowIndex}: lineLeft=${lineLeft}, lineWidth=${lineWidth}`);
+                    }
+                });
+            }
+        }
+
+        // Position vertical connector from parent to children
+        function positionConnectorForRow(childRow) {
+            if (!childRow) return;
+            
+            const childWrappers = childRow.querySelectorAll('.child-node-wrapper');
+            if (childWrappers.length === 0) return;
+
+            // Remove any existing parent-connector (we handle horizontal lines differently now)
+            const existingConnector = childRow.querySelector('.parent-connector');
+            if (existingConnector) {
+                existingConnector.remove();
+            }
+
+            // Ensure a single vertical span exists and is positioned in the middle
+            let verticalSpan = childRow.querySelector('.parent-vertical-span');
+            if (!verticalSpan) {
+                verticalSpan = document.createElement('div');
+                verticalSpan.className = 'parent-vertical-span';
+                childRow.appendChild(verticalSpan);
+            }
+
+            if (childWrappers.length === 1) {
+                // Single child - position vertical line directly under the child
+                const childRect = childWrappers[0].getBoundingClientRect();
+                const rowRect = childRow.getBoundingClientRect();
+                verticalSpan.style.left = `${childWrappers[0].offsetLeft + (childWrappers[0].offsetWidth / 2)}px`;
+            } else {
+                // Position vertical line at the center of the first child (attached to horizontal line start)
+                const firstChild = childWrappers[0];
+                const firstChildCenter = firstChild.offsetLeft + (firstChild.offsetWidth / 2);
+                verticalSpan.style.left = `${firstChildCenter}px`;
+
+                console.log(`🎯 Vertical line at first node center: ${firstChildCenter}px`);
+                console.log(`🔗 HORIZONTAL should start at: ${firstChildCenter}px (same position)`);
+            }
+            
+            verticalSpan.style.height = '20px';
+            // top is now handled by CSS (-20px)
+        }
+
+        // Recalculate all visible row connectors and level connectors
+        function recalcAllRowConnectors() {
+            console.log('recalcAllRowConnectors called');
+
+            // Use multiple animation frames to ensure DOM is fully settled
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // First handle vertical connectors
+                    const rows = document.querySelectorAll('.child-nodes-row:not([style*="display: none"])');
+                    console.log('Found', rows.length, 'visible rows for connector positioning');
+
+                    rows.forEach((row, index) => {
+                        console.log(`Processing vertical connector for row ${index}`);
+                        positionConnectorForRow(row);
+                    });
+
+                    // Force a layout recalculation
+                    document.body.offsetHeight;
+
+                    // Use another animation frame for horizontal connectors with additional delay
+                    setTimeout(() => {
+                        console.log('Starting horizontal connector update');
+                        updateHorizontalConnectors();
+                    }, 100);
+                });
+            });
+        }
+
+
+
+        createBoard();
+    </script>
+</body>
+</html>
