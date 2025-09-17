@@ -71,4 +71,9 @@ To retrain the AI agent, run:
 python train_agent.py
 ```
 
-This will generate new Q-values and save them to `trained_agent_values.pkl`.# tictactoe_visualization
+You can also specify the number of training episodes:
+```bash
+python train_agent.py --episodes 50000
+```
+
+This will generate new Q-values and save them to `trained_agent_values.pkl`.
